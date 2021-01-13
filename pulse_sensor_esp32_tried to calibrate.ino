@@ -10,7 +10,7 @@
 #include <BlynkSimpleEsp32.h>
 BlynkTimer timer;
 
-char auth[] = "HmjJ7MVLfcpCdEl9-TwEiFVn0qsWpKE7";
+char auth[] = "i0aj3JBtL9rRhnOKCH15jjJmlIWOul2h";
 char ssid[] = "DIGI_066b80";
 char pass[] = "aa21f994";
 
