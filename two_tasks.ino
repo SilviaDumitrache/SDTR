@@ -3,10 +3,20 @@
 #include <PulseSensorPlayground.h>     // Includes the PulseSensorPlayground Library.   
 #include <semphr.h>                    //add the FreeRTOS functions for semaphores (flags)
 
+include Blynk
+#define BLYNK_PRINT DebugSerial
+#include <SoftwareSerial.h>
+SoftwareSerial DebugSerial(2, 3); // RX, TX
+#include <BlynkSimpleStream.h>
+char auth[] = "i0aj3JBtL9rRhnOKCH15jjJmlIWOul2h";   //token given after installing the Blynk app
+WidgetTerminal terminal(V1); //attach to virtual pin v1
+
+
 /*---------------------- Variables ---------------------*/
 const int PulseWire = 0;       // PulseSensor PURPLE WIRE connected to ANALOG PIN 0
 const int LED13 = 13;          // The on-board Arduino LED, close to PIN 13.
-int Threshold = 550;           // Determine which Signal to "count as a beat" and which to ignore.
+int Threshold = 515;           // Determine which Signal to "count as a beat" and which to ignore.
+//550
 
 PulseSensorPlayground pulseSensor;  // Creates an instance of the PulseSensorPlayground object called "pulseSensor"
 
@@ -30,7 +40,13 @@ void TaskAnalogRead(void *pvParameters);
  void setup() {
   // put your setup code here, to run once:
 
+  // Debug console
+//  DebugSerial.begin(9600);
+
   Serial.begin(9600); //serial communication initialized at 9600 bits per seconds
+//  Blynk.begin(Serial, auth);
+  
+  
   while(!Serial) {
     ;//wait for serial port to connect
   }
@@ -75,13 +91,22 @@ void TaskAnalogRead(void *pvParameters);
 
 
               //The task scheduler is automatically started
+
+            
 }
 
 
 void loop() {
   //is empty => things are done in tasks
+ Blynk.run();
+  
 }
 
+   
+  const int sensorMin = 0;      // sensor minimum
+  const int sensorMax = 1024;    // sensor maximum
+//  int sensorValue = data; 
+  int range;
 
 
 /*---------------------- Tasks ---------------------*/
@@ -96,7 +121,7 @@ void TaskBlink( void *pvParameters) {
   {
     // If the semaphore is not available, wait 5 ticks of the Scheduler to see if it becomes free.
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ){
-      Serial.println("Led blinking"); }
+      Serial.println("semaphore -> task blink"); }
     
     digitalWrite(LED,HIGH);                  //led on
     vTaskDelay(1000/portTICK_PERIOD_MS);     //wait 1sec
@@ -116,8 +141,13 @@ void TaskAnalogRead(void *pvParameters) {
   {
     // read the input on analog pin 0:
     int sensorValue = pulseSensor.getBeatsPerMinute(); //sensorValue holds the BPM value
+//    Blynk.virtualWrite(V1,sensorValue);
+    
+    int range = map(sensorValue, sensorMin, sensorMax, 0, 11);
+ 
 
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+//      Serial.println("semaphore -> task analog read");
 
     if (pulseSensor.sawStartOfBeat()){
       Serial.println("♥ HeartBeat found ! ");  //if test = true => print message
@@ -126,14 +156,7 @@ void TaskAnalogRead(void *pvParameters) {
 
       xSemaphoreGive(xSerialSemaphore);       //give serial port to others
       vTaskDelay(1);    // one tick delay (15ms) in between reads for stability
-    }}
+    } }
 //    vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
   }
 }
-
-
-
-
-
-
-
